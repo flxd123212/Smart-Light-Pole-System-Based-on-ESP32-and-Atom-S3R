@@ -1,138 +1,136 @@
-# Smart Light Pole System Based on ESP32 and AtomS3R M12
+# 基于 ESP32 和 AtomS3R M12 的智能灯杆系统
 
-> **2025 IoT Application Innovation Design Competition — Skill Challenge**
-> A multi-sensor smart light pole system with real-time environmental monitoring, AI-powered pedestrian detection, and remote LED control.
+> **2025 年第九届湖南省大学生物联网应用创新设计竞赛 —— 技能赛题目**
+> 多传感器智能灯杆系统，集成环境监测、AI 行人识别、远程 LED 控制。
 
 ---
 
-## System Architecture
+## 系统架构
 
 ```
-┌────────────────── Hardware Layer (WiFi LAN) ──────────────────┐
-│                                                                │
-│  AtomS3R M12 Camera       ESP32-S3-DevKitC-1 (Pole Controller) │
-│  ├─ MJPEG Stream (/stream) ├─ DHT11  Temp/Humidity (GPIO4)     │
-│  ├─ POST /capture (photo)  ├─ Photoresistor Lux (GPIO1, ADC)   │
-│  └─ POST stream frames     ├─ INA219 Voltage/Current (I2C)     │
-│                             ├─ 2-Ch Relay IN → GPIO7 (LED Ctrl) │
-│                             └─ Green LED + 100Ω current limit   │
-└─────────────┬────────────────────┬─────────────────────────────┘
-              │ HTTP                │ MQTT (lamp/LP001)
-              ▼                     ▼
-┌────────────────── Server Layer ────────────────────────────────┐
-│                                                                │
-│  EMQX :1883 (MQTT Broker)                                      │
-│      ↕                                                         │
+┌────────────────── 硬件层 (WiFi 局域网) ──────────────────────┐
+│                                                               │
+│  AtomS3R M12 摄像头        ESP32-S3-DevKitC-1 (单杆控制器)    │
+│  ├─ MJPEG 视频流 (/stream)  ├─ DHT11  温湿度  (GPIO4)        │
+│  ├─ POST /capture (拍照)    ├─ 光敏模块 光照  (GPIO1, ADC)   │
+│  └─ POST 流帧到 Flask       ├─ INA219 电压电流 (I2C)         │
+│                              ├─ 2路继电器 IN2→GPIO7 (LED 控) │
+│                              └─ 绿色 LED + 100Ω 限流电阻      │
+└─────────────┬─────────────────────┬──────────────────────────┘
+              │ HTTP                 │ MQTT (lamp/LP001)
+              ▼                      ▼
+┌────────────────── 服务层 ─────────────────────────────────────┐
+│                                                               │
+│  EMQX :1883 (MQTT 消息代理)                                   │
+│      ↕                                                        │
 │  RuoYi-Vue (Spring Boot :8080 + Vue :80)                      │
-│  ├─ MQTT Handler → iot_sensor_data / alarm / LED status       │
-│  ├─ REST API for historical data, curves, alarm rules          │
-│  └─ Element-UI frontend for management dashboard               │
-│                                                                │
-│  Flask (:5000) — Camera stream proxy + photo management        │
-│  ├─ MJPEG stream relay from AtomS3R                            │
-│  ├─ Photo archive + gallery                                    │
-│  ├─ SSE events for real-time photo notifications               │
-│  └─ AI detection trigger → MQTT → ESP32 → camera capture       │
-│                                                                │
-│  YOLOv11 (:5001) — Pedestrian detection HTTP service           │
-│  MySQL (:3306) — 7 business tables (RuoYi codegen)             │
-└────────────────────────────────────────────────────────────────┘
+│  ├─ MQTT 消息处理 → 传感器数据 / 报警 / LED 状态             │
+│  ├─ REST API → 历史数据、曲线、报警规则配置                   │
+│  └─ Element-UI 管理后台                                       │
+│                                                               │
+│  Flask (:5000) — 摄像头流代理 + 照片管理                      │
+│  ├─ 转发 AtomS3R 的 MJPEG 视频流                              │
+│  ├─ 照片存档 + 图库                                           │
+│  ├─ SSE 事件 → 实时拍照通知                                   │
+│  └─ AI 检测触发 → trigger → ESP32 → 拍照                      │
+│                                                               │
+│  YOLOv11 (:5001) — 行人检测 HTTP 服务                         │
+│  MySQL (:3306) — 7 张业务表 (RuoYi 代码生成)                  │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-## Features
+## 功能清单
 
-| Feature | Description | Points |
+| 功能 | 说明 | 分值 |
 |---|---|---|
-| **Pole List & Detail View** | List all poles, click for LED status, sensor data, video | 10 |
-| **Real-time Sensor Monitoring** | Temp, humidity, light, voltage, current — refresh every 5s | 10 |
-| **Historical Sensor Data** | Filter by pole ID + time range, curve chart visualization | 20 |
-| **Live Camera Stream** | MJPEG stream from each pole's camera | 10 |
-| **Alarm Rules & Real-time Alerts** | Custom min/max thresholds, popup on violation, history log | 10 |
-| **Remote LED Control** | Web/APP send ON/OFF command, hardware responds in real time | 10 |
-| **Video Frame Capture** | Capture frame from camera, display original image | 10 |
-| **AI Pedestrian Detection** | HTTP call to YOLO, return annotated image + person count | 10 |
-| **Detection History** | Filter by pole ID + time, show original + annotated images | 10 |
+| **灯杆列表与详情页** | 显示全部灯杆，点击查看 LED 状态、传感数据、视频 | 10 |
+| **实时传感数据监测** | 温度、湿度、光照、电压、电流 — 每 5 秒刷新 | 10 |
+| **历史传感数据查询** | 按灯杆编号 + 时间范围筛选，曲线图可视化 | 20 |
+| **实时视频监控** | 每根灯杆的 MJPEG 视频流 | 10 |
+| **报警规则配置与弹窗** | 自定义上下限，超限弹窗提示，历史报警记录 | 10 |
+| **远程 LED 控制** | Web 下发开/关指令，硬件实时响应 | 10 |
+| **视频帧截图与展示** | 截取摄像头帧，前端展示原始图片 | 10 |
+| **AI 行人识别** | HTTP 调用 YOLO，返回带框标注图 + 人数 | 10 |
+| **识别记录检索** | 按灯杆编号 + 时间筛选，原图 + 标注图显示 | 10 |
 
-## Hardware Wiring (ESP32-S3-DevKitC-1)
+## 硬件接线 (ESP32-S3-DevKitC-1)
 
-### Pin Assignment
+### 引脚分配
 
-| Device | Signal | ESP32 Pin | Board Header |
+| 设备 | 信号 | ESP32 引脚 | 板子位置 |
 |---|---|---|---|
 | DHT11 | DATA | GPIO4 | J1-4 |
-| Photoresistor Module | AO (Analog Out) | GPIO1 | J3-4 |
+| 光敏模块 | AO（模拟输出） | GPIO1 | J3-4 |
 | INA219 | SDA | GPIO8 | J1-12 |
 | INA219 | SCL | GPIO9 | J1-15 |
-| 2-Ch Relay | IN2 (CH2) | GPIO7 | J1-7 |
-| Green LED | Anode | ← 100Ω ← INA219 VIN- | — |
-| Green LED | Cathode | GND | J1-22 |
-| AtomS3R M12 | WiFi | Independent board | 192.168.223.223 |
+| 2路继电器 | IN2 (CH2) | GPIO7 | J1-7 |
+| 绿色 LED | 阳极 | ← 100Ω ← INA219 VIN- | — |
+| 绿色 LED | 阴极 | GND | J1-22 |
+| AtomS3R M12 | WiFi | 独立板 | 192.168.223.223 |
 
-### Power Distribution
+### 供电分配
 
-| Rail | Pin | Supplies |
+| 电源 | 位置 | 供电器件 |
 |---|---|---|
-| 3V3 | J1-1, J1-2 | DHT11 VCC, Photoresistor VCC, INA219 VCC |
-| 5V | J1-21 | Relay DC+, Relay COM2 |
-| GND | J1-22 | All modules, LED cathode |
+| 3V3 | J1-1, J1-2 | DHT11 VCC、光敏 VCC、INA219 VCC |
+| 5V | J1-21 | 继电器 DC+、继电器 COM2 |
+| GND | J1-22 | 所有模块 GND、LED 阴极 |
 
-### INA219 Wiring (with 100Ω pull-down to prevent leakage)
-
-```
-Relay NO2 ─┬─ INA219 VIN+ (bus voltage measurement)
-            └─ 100Ω → GND (pull-down, prevents LED ghosting)
-INA219 VIN- → 100Ω → Green LED Anode
-Green LED Cathode → GND
-```
-
-### LED Current Path
+### INA219 接线（带 100Ω 下拉防漏电）
 
 ```
-Relay ON: 5V → COM2 → NO2 → INA219 VIN+ → [0.1Ω shunt] → VIN- → 100Ω → LED → GND
-Relay OFF: VIN+ pulled to GND via 100Ω → LED completely off (no leakage)
+继电器 NO2 ─┬─ INA219 VIN+ (总线电压测量)
+             └─ 100Ω → GND (下拉，防止 LED 微亮)
+INA219 VIN- → 100Ω → 绿色 LED 阳极
+绿色 LED 阴极 → GND
 ```
 
-### Important Notes
+### LED 电流回路
 
-- **ADC1 (GPIO1-10)** must be used for analog — ADC2 conflicts with WiFi
-- **GPIO35/36/37** are used by Octal PSRAM — do not use
-- **GPIO19/20** are USB D-/D+ — do not use
-- The photoresistor module AO is **inverted**: dark → HIGH (raw 4095), bright → LOW
-- The 2-channel relay module is **active HIGH**: HIGH → relay ON, LOW → relay OFF
+```
+继电器吸合: 5V → COM2 → NO2 → INA219 VIN+ → [0.1Ω 分流] → VIN- → 100Ω → LED → GND
+继电器断开: VIN+ 被 100Ω 拉到 GND → LED 彻底关断（无漏电）
+```
 
-## Firmware
+### 注意事项
+
+- **ADC1（GPIO1-10）** 用于模拟输入 — ADC2 与 WiFi 冲突不可用
+- **GPIO35/36/37** 被 Octal PSRAM 占用 — 不可使用
+- **GPIO19/20** 是 USB D-/D+ — 不可使用
+- 光敏 AO 为 **反相输出**：越暗电压越高（raw=4095），越亮电压越低
+- 2路继电器为 **高电平触发**：HIGH→吸合、LOW→断开
+
+## 固件
 
 ### ESP32-S3-WROOM (`arduino_stream/esp32_s3_wroom/`)
 
-Senses and controls one lamp pole:
-
-| Interval | Action |
+| 周期 | 动作 |
 |---|---|
-| Every 5s | Read DHT11 (temp/humidity) |
-| Every 5s | Read photoresistor (ambient light) |
-| Every 5s | Read INA219 (LED voltage/current) |
-| Every 5s | Auto LED control (dark→ON, bright→OFF with hysteresis) |
-| Every 5s | MQTT publish to `lamp/LP001` |
-| Every 500ms | Poll Flask trigger → POST AtomS3R /capture |
-| On MQTT command | Subscribe `lamp/LP001/control` for remote ON/OFF |
+| 每 5 秒 | 读 DHT11（温度/湿度） |
+| 每 5 秒 | 读光敏电阻（环境光照） |
+| 每 5 秒 | 读 INA219（LED 电压/电流） |
+| 每 5 秒 | 自动开关灯（暗→亮、亮→灭，带滞回区间） |
+| 每 5 秒 | MQTT 上报到 `lamp/LP001` |
+| 每 500ms | 轮询 Flask 拍照触发 → POST AtomS3R /capture |
+| MQTT 命令 | 订阅 `lamp/LP001/control` 接收远程开关指令 |
 
-**Required Libraries:** DHTesp, Adafruit_INA219, PubSubClient, Arduino_ESP32_BLE (via board manager)
+**依赖库：** DHTesp、Adafruit_INA219、PubSubClient
 
-### AtomS3R M12 Camera (`arduino_stream/atoms3r_camera/`)
+### AtomS3R M12 (`arduino_stream/atoms3r_camera/`)
 
-| Route | Method | Function |
+| 路由 | 方法 | 功能 |
 |---|---|---|
-| / | GET | Web UI with stream + capture button |
-| /stream | GET | MJPEG video stream (720P) |
-| /capture | POST | Take photo, POST to Flask `/api/upload/photo` |
+| / | GET | 网页界面（视频流 + 拍照按钮） |
+| /stream | GET | MJPEG 视频流（720P） |
+| /capture | POST | 拍照，自动上传 Flask `/api/upload/photo` |
 
-Stream frames are also continuously POSTed to Flask `/api/upload/stream` for AI detection.
+持续推送视频帧到 Flask `/api/upload/stream`，供 AI 检测线程使用。
 
-## MQTT Protocol
+## MQTT 协议
 
-### Device Report (ESP32 → Server)
+### 设备上报（ESP32 → 服务器）
 
-**Topic:** `lamp/LP001`
+**Topic：** `lamp/LP001`
 
 ```json
 {
@@ -146,209 +144,200 @@ Stream frames are also continuously POSTed to Flask `/api/upload/stream` for AI 
 }
 ```
 
-| Field | Source | Description |
+| 字段 | 来源 | 说明 |
 |---|---|---|
-| lampId | Config | Must match `iot_pole.pole_code` in DB |
-| temperature | DHT11 | °C |
-| humidity | DHT11 | %RH |
-| illumination | Photoresistor AO/100 | Custom unit (0-40.95) |
-| voltage | INA219 | LED working voltage (V) |
-| current | INA219 | LED working current (A) |
-| status | LED state | "0"=OFF, "1"=ON |
+| lampId | 固定值 | 必须与 `iot_pole.pole_code` 一致 |
+| temperature | DHT11 | 温度 ℃ |
+| humidity | DHT11 | 湿度 %RH |
+| illumination | 光敏 ADC/100 | 自定义单位（0-40.95） |
+| voltage | INA219 | LED 电压 V |
+| current | INA219 | LED 电流 A |
+| status | LED 状态 | "0"=关, "1"=开 |
 
-### Platform Command (Server → ESP32)
+### 平台指令（服务器 → ESP32）
 
-**Topic:** `lamp/LP001/control`
+**Topic：** `lamp/LP001/control`
 
-| Payload | Effect |
+| 消息体 | 效果 |
 |---|---|
-| `"1"` or `{"cmd":"on"}` | LED ON (relay engage) |
-| `"0"` or `{"cmd":"off"}` | LED OFF (relay release) |
+| `"1"` 或 `{"cmd":"on"}` | 开灯（继电器吸合） |
+| `"0"` 或 `{"cmd":"off"}` | 关灯（继电器断开） |
 
 ## REST API
 
-### RuoYi Backend (:8080)
+### RuoYi 后端 (:8080)
 
-All endpoints require `Authorization: Bearer <token>` (login: admin/admin123).
+需 `Authorization: Bearer <token>`（登录 admin/admin123）。
 
-| Module | Method | Path | Description |
+| 模块 | 方法 | 路径 | 说明 |
 |---|---|---|---|
-| Sensor Data | GET | `/IotSensorData/IotSensorData/list` | Query with poleId, time range |
-| Sensor Data | GET | `/IotSensorData/IotSensorData/{dataId}` | Single record detail |
-| Pole | GET | `/IotPole/IotPole/list` | All poles |
-| Pole | GET | `/IotPole/IotPole/{poleId}` | Single pole detail |
-| Camera Capture | GET | `/IotCameraCapture/IotCameraCapture/list` | Query captures |
-| Camera Capture | POST | `/IotCameraCapture/IotCameraCapture` | Add new capture |
-| Alarm Rule | GET | `/IotAlarmRule/IotAlarmRule/list` | All alarm rules |
-| Alarm Rule | POST | `/IotAlarmRule/IotAlarmRule` | Create rule |
-| Alarm Record | GET | `/IotAlarmRecord/IotAlarmRecord/list` | Query alarm history |
-| Control Log | GET | `/IotControlLog/IotControlLog/list` | Control command logs |
-| Device | GET | `/IotDevice/IotDevice/list` | Device inventory |
+| 传感器数据 | GET | `/IotSensorData/IotSensorData/list` | 按 poleId、时间范围查询 |
+| 传感器数据 | GET | `/IotSensorData/IotSensorData/{dataId}` | 单条详情 |
+| 灯杆 | GET | `/IotPole/IotPole/list` | 全部灯杆 |
+| 灯杆 | GET | `/IotPole/IotPole/{poleId}` | 单杆详情 |
+| 摄像头抓拍 | GET | `/IotCameraCapture/IotCameraCapture/list` | 抓拍记录列表 |
+| 摄像头抓拍 | POST | `/IotCameraCapture/IotCameraCapture` | 新增抓拍记录 |
+| 报警规则 | GET | `/IotAlarmRule/IotAlarmRule/list` | 规则列表 |
+| 报警规则 | POST | `/IotAlarmRule/IotAlarmRule` | 新建规则 |
+| 报警记录 | GET | `/IotAlarmRecord/IotAlarmRecord/list` | 报警历史 |
+| 控制日志 | GET | `/IotControlLog/IotControlLog/list` | 远程控制记录 |
+| 设备 | GET | `/IotDevice/IotDevice/list` | 设备清单 |
 
-### Flask Server (:5000)
+### Flask 服务 (:5000)
 
-| Method | Path | Description |
+| 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/` | Camera web UI |
-| GET | `/api/stream/mjpeg` | Live MJPEG stream |
-| GET | `/api/stream/latest` | Latest frame JPEG |
-| GET | `/api/events` | SSE feed (photo/alarm events) |
-| POST | `/api/upload/photo` | Receive photo from AtomS3R |
-| GET | `/api/photos` | Photo gallery (reverse chronological) |
-| GET | `/api/photo/<filename>` | Single photo |
-| POST | `/api/trigger/set` | Request photo capture |
-| GET | `/api/trigger/consume` | ESP32 polls for capture orders |
-| POST | `/infer` | AI detection proxy → YOLO:5001 |
+| GET | `/` | 摄像头网页界面 |
+| GET | `/api/stream/mjpeg` | 实时 MJPEG 视频流 |
+| GET | `/api/stream/latest` | 最新一帧 JPEG |
+| GET | `/api/events` | SSE 事件推送（拍照、报警） |
+| POST | `/api/upload/photo` | 接收 AtomS3R 照片 |
+| GET | `/api/photos` | 图库列表（按时间倒序） |
+| GET | `/api/photo/<filename>` | 单张照片 |
+| POST | `/api/trigger/set` | 前端请求拍照 |
+| GET | `/api/trigger/consume` | ESP32 轮询拍照指令 |
+| POST | `/infer` | AI 识别代理 → YOLO:5001 |
 
-### YOLO Service (:5001)
+### YOLO 服务 (:5001)
 
 ```bash
 POST http://127.0.0.1:5001/infer
 Content-Type: application/json
 
-{ "image": "data:image/jpeg;base64,/9j/4AAQ..." }
+{ "image": "data:image/jpeg;base64,..." }
 ```
 
-Response:
+响应：
 ```json
 {
-  "image": "(base64 JPEG with bounding boxes)",
+  "image": "(base64 编码标注图)",
   "inference_results": [
     { "class": 0, "confidence": 0.95, "bbox": [100, 200, 300, 400] }
   ]
 }
 ```
 
-## Database Schema
+## 数据库
 
-**Database:** `iot-light` (MySQL 8.0)
+**库名：** `iot-light`（MySQL 8.0）
 
-### 7 Business Tables
+### 7 张业务表
 
-| Table | Purpose | Key Fields |
+| 表名 | 用途 | 关键字段 |
 |---|---|---|
-| `iot_pole` | Lamp pole registry | `pole_id, pole_code, led_status, status` |
-| `iot_device` | Device inventory | `device_id, pole_id, device_type(0~4)` |
-| `iot_sensor_data` | Time-series sensor data | `data_id, pole_id, temperature, humidity, illumination, voltage, current, collect_time` |
-| `iot_alarm_rule` | Alarm threshold config | `rule_id, pole_id, param_type(0~4), min_value, max_value` |
-| `iot_alarm_record` | Alarm event log | `record_id, pole_id, param_type, alarm_value, status` |
-| `iot_control_log` | Remote control audit | `log_id, pole_id, control_type(0~2), result` |
-| `iot_camera_capture` | Photo + AI result | `capture_id, pole_id, image_url, person_count, result_json, capture_time` |
+| `iot_pole` | 灯杆注册 | `pole_id, pole_code, led_status, status` |
+| `iot_device` | 设备清单 | `device_id, pole_id, device_type(0~4)` |
+| `iot_sensor_data` | 传感器数据 | `data_id, pole_id, temperature, humidity, illumination, voltage, current, collect_time` |
+| `iot_alarm_rule` | 报警规则 | `rule_id, pole_id, param_type(0~4), min_value, max_value` |
+| `iot_alarm_record` | 报警记录 | `record_id, pole_id, param_type, alarm_value, status` |
+| `iot_control_log` | 控制日志 | `log_id, pole_id, control_type(0~2), result` |
+| `iot_camera_capture` | 摄像头抓拍 | `capture_id, pole_id, image_url, person_count, result_json, capture_time` |
 
-### Seed Data (Required)
-
-The ESP32 uses `lampId = "LP001"`, which must exist in `iot_pole`:
+### 种子数据
 
 ```sql
 INSERT INTO `iot_pole` VALUES (
-  100, 'LP001', '灯杆01', 'Test Section',
+  100, 'LP001', '灯杆01', '测试路段',
   NULL, NULL, '0', '0', 1, '0',
   'admin', NOW(), '', NULL, NULL
 );
 ```
 
-## AI Detection Flow (Pedestrian → Photo → Database)
+## AI 行人检测流程
 
 ```
-1. Flask detection_loop (every 2s) grabs latest stream frame
-2. POST frame to YOLO :5001 for inference
-3. If person detected (class=0, confidence>0.5):
-   a. Cache AI result (person count + bbox JSON)
-   b. Set trigger_flag = True
-4. ESP32 polls /api/trigger/consume every 500ms
-5. Gets True → POST AtomS3R /capture
-6. AtomS3R takes photo → POST to Flask /api/upload/photo
-7. Flask saves photo, reads cached AI result
-8. Writes to iot_camera_capture (MySQL) via pymysql
-9. SSE broadcast "photo" → frontend auto-refreshes gallery
+1. Flask 检测线程（每 2 秒）截取最新视频帧
+2. POST 帧到 YOLO :5001 推理
+3. 检测到行人（class=0, confidence>0.5）：
+   a. 缓存 AI 结果（人数 + bbox JSON）
+   b. 设置 trigger_flag = True
+4. ESP32 每 500ms 轮询 /api/trigger/consume
+5. 收到 True → POST AtomS3R /capture
+6. AtomS3R 拍照 → POST 到 Flask /api/upload/photo
+7. Flask 保存照片，读取缓存 AI 结果
+8. 写入 iot_camera_capture 表（pymysql）
+9. SSE 广播 "photo" → 前端自动刷新图库
 ```
 
-## LED Auto-Control Logic
+## LED 自动控制逻辑
 
 ```cpp
-if (lightRaw > LIGHT_ON_TH)       // Dark (raw > 3000): ON
+if (lightRaw > LIGHT_ON_TH)           // 黑暗 (raw > 3000): 开灯
     led = true;
-else if (lightRaw < LIGHT_OFF_TH) // Bright (raw < 1000): OFF
+else if (lightRaw < LIGHT_OFF_TH)     // 明亮 (raw < 1000): 关灯
     led = false;
-// Between thresholds: maintain current state (hysteresis)
+// 中间区间: 保持当前状态（滞回防抖）
 ```
 
-The photoresistor AO is **inverted**: dark room → raw=4095, direct flashlight → raw≈50.
+## 部署
 
-## Deployment
-
-### Startup Order
+### 启动顺序
 
 ```
-1. MySQL        — import iot-light database from sql/data.sql
-2. EMQX         — D:\emqx\bin\emqx.cmd start (broker at :1883)
-3. Spring Boot  — java -jar iotlight-admin.jar (:8080)
-4. Vue Frontend — npm run dev in start-vue/ (:80)
-5. YOLO         — D:\yolo_model\run.bat (:5001)
-6. Flask        — python app.py in server/ (:5000)
-7. AtomS3R M12  — power on (auto-registers with Flask)
-8. ESP32-S3     — power on (connects WiFi + MQTT)
+1. MySQL          — 导入 sql/data.sql 创建 iot-light 库
+2. EMQX           — D:\bin\emqx.cmd start（MQTT 代理 :1883）
+3. Spring Boot    — java -jar iotlight-admin.jar（RuoYi :8080）
+4. Vue 前端       — cd start-vue && npm run dev（管理界面 :80）
+5. YOLO           — D:\yolo_model\run.bat（AI 服务 :5001）
+6. Flask          — python app.py（摄像头服务 :5000）
+7. AtomS3R M12    — 上电（自动注册到 Flask）
+8. ESP32-S3       — 上电（自动连 WiFi + MQTT）
 ```
 
-### Remote Access
+### 远程访问
 
-- **Vue Dashboard:** `http://<server-ip>` (port 80)
-- **Camera Page:** `http://<server-ip>:5000`
-- **REST API:** `http://<server-ip>:8080`
-
-### Dual-Server Topology (Optional)
-
-```
-Server 1 (192.168.223.134): MySQL, EMQX, Spring Boot, Vue
-Server 2 (192.168.223.135): Flask, YOLO
-```
-
-Switch config files between single-machine and dual-server via commented blocks.
-
-## Technology Stack
-
-| Component | Technology |
+| 访问内容 | URL |
 |---|---|
-| MCU | ESP32-S3 (Xtensa LX7 dual-core) |
-| Camera | AtomS3R M12 (ESP32-S3 + OV2640) |
-| Sensors | DHT11, Photoresistor (LM393), INA219 |
-| MQTT Broker | EMQX 5.x |
-| Backend | Spring Boot 3.x + RuoYi-Vue 3.9 |
-| Frontend | Vue 2 + Element-UI + ECharts |
-| AI | YOLOv11 (HTTP service) |
-| Database | MySQL 8.0 |
-| Middleware | Flask (Python 3), Redis |
+| **管理后台** | `http://<服务器IP>`（端口 80） |
+| **摄像头页面** | `http://<服务器IP>:5000` |
+| **REST API** | `http://<服务器IP>:8080` |
 
-## Project Structure
+### 双服务器拓扑
 
 ```
-Smart Light Pole System Based on ESP32 and Atom‑S3R/
+服务器 1 (192.168.223.134): MySQL, EMQX, Spring Boot, Vue
+服务器 2 (192.168.223.135): Flask, YOLO
+```
+
+配置文件中有注释块可切换单机/双机模式。
+
+## 技术栈
+
+| 组件 | 技术 |
+|---|---|
+| MCU | ESP32-S3 (Xtensa LX7 双核) |
+| 摄像头 | AtomS3R M12 (ESP32-S3 + OV2640) |
+| 传感器 | DHT11、光敏电阻(LM393)、INA219 |
+| MQTT 代理 | EMQX 5.x |
+| 后端 | Spring Boot 3.x + RuoYi-Vue 3.9 |
+| 前端 | Vue 2 + Element-UI + ECharts |
+| AI | YOLOv11（HTTP 服务） |
+| 数据库 | MySQL 8.0 |
+| 中间件 | Flask (Python 3)、Redis |
+
+## 项目结构
+
+```
+Smart Light Pole System/
 ├── arduino_stream/
-│   ├── atoms3r_camera/           # AtomS3R M12 camera firmware
-│   ├── esp32_s3_wroom/           # ESP32-S3 pole controller firmware
+│   ├── atoms3r_camera/            # AtomS3R 摄像头固件
+│   ├── esp32_s3_wroom/            # ESP32-S3 单杆控制器固件
 │   └── server/
-│       ├── app.py                # Flask server
-│       └── templates/index.html  # Camera web page
-├── iot-light-main/               # RuoYi-Vue backend
-│   ├── iotlight-admin/           # Spring Boot entry
-│   ├── IoT-Light-Base/           # Generated modules
-│   ├── start-vue/                # Vue frontend
-│   └── sql/data.sql              # Database schema + seed data
-├── docs/
-│   ├── 智能灯杆硬件接线.md        # Hardware wiring (Chinese)
-│   └── 智能灯杆系统集成文档.md     # Integration guide (Chinese)
-└── README.md                     # This file
+│       ├── app.py                 # Flask 服务器
+│       └── templates/index.html   # 摄像头网页
+├── iot-light-main/                # RuoYi-Vue 后台
+│   ├── iotlight-admin/            # Spring Boot 入口
+│   ├── IoT-Light-Base/            # 代码生成模块（7 张表）
+│   ├── start-vue/                 # Vue 前端
+│   └── sql/data.sql               # 建库脚本 + 种子数据
+├── 智能灯杆硬件接线.md             # 硬件接线说明
+├── 智能灯杆系统集成文档.md          # 集成部署文档
+└── README.md                      # 本文件
 ```
 
-## Competition Context
+## 赛事背景
 
-- **Event:** 2025 9th Hunan University IoT Application Innovation Design Competition
-- **Category:** Skill Challenge
-- **Rules:** No internet access during competition; team-built LAN; committee-provided YOLO model via USB
-- **Scoring:** Module 1 (70pts) — data collection/display/control; Module 2 (30pts) — AI video recognition
-
----
-
-## License
-
-This project is for educational/competition purposes.
+- **赛事：** 2025 年第九届湖南省大学生物联网应用创新设计竞赛
+- **类别：** 技能赛
+- **规则：** 全程禁止外网；参赛团队自建局域网；组委会 U 盘提供 YOLO 模型
+- **评分：** 模块一（70 分）数据采集/展示/控制；模块二（30 分）AI 视频识别
