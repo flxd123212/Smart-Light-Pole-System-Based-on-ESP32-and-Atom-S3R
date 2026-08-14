@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.mapper.IotPoleMapper">
+
+    <resultMap type="IotPole" id="IotPoleResult">
+        <result property="poleId"    column="pole_id"    />
+        <result property="poleCode"    column="pole_code"    />
+        <result property="poleName"    column="pole_name"    />
+        <result property="location"    column="location"    />
+        <result property="latitude"    column="latitude"    />
+        <result property="longitude"    column="longitude"    />
+        <result property="status"    column="status"    />
+        <result property="ledStatus"    column="led_status"    />
+        <result property="orderNum"    column="order_num"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectIotPoleVo">
+        select pole_id, pole_code, pole_name, location, latitude, longitude, status, led_status, order_num, del_flag, create_by, create_time, update_by, update_time, remark from iot_pole
+    </sql>
+
+    <select id="selectIotPoleList" parameterType="IotPole" resultMap="IotPoleResult">
+        <include refid="selectIotPoleVo"/>
+        <where>
+            <if test="poleCode != null  and poleCode != ''"> and pole_code = #{poleCode}</if>
+            <if test="poleName != null  and poleName != ''"> and pole_name like concat('%', #{poleName}, '%')</if>
+            <if test="location != null  and location != ''"> and location = #{location}</if>
+            <if test="latitude != null "> and latitude = #{latitude}</if>
+            <if test="longitude != null "> and longitude = #{longitude}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="ledStatus != null  and ledStatus != ''"> and led_status = #{ledStatus}</if>
+            <if test="orderNum != null "> and order_num = #{orderNum}</if>
+        </where>
+    </select>
+
+    <select id="selectIotPoleByPoleId" parameterType="Long" resultMap="IotPoleResult">
+        <include refid="selectIotPoleVo"/>
+        where pole_id = #{poleId}
+    </select>
+
+    <insert id="insertIotPole" parameterType="IotPole" useGeneratedKeys="true" keyProperty="poleId">
+        insert into iot_pole
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="poleCode != null and poleCode != ''">pole_code,</if>
+            <if test="poleName != null">pole_name,</if>
+            <if test="location != null">location,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="status != null">status,</if>
+            <if test="ledStatus != null">led_status,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="poleCode != null and poleCode != ''">#{poleCode},</if>
+            <if test="poleName != null">#{poleName},</if>
+            <if test="location != null">#{location},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="status != null">#{status},</if>
+            <if test="ledStatus != null">#{ledStatus},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateIotPole" parameterType="IotPole">
+        update iot_pole
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="poleCode != null and poleCode != ''">pole_code = #{poleCode},</if>
+            <if test="poleName != null">pole_name = #{poleName},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="ledStatus != null">led_status = #{ledStatus},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where pole_id = #{poleId}
+    </update>
+
+    <delete id="deleteIotPoleByPoleId" parameterType="Long">
+        delete from iot_pole where pole_id = #{poleId}
+    </delete>
+
+    <delete id="deleteIotPoleByPoleIds" parameterType="String">
+        delete from iot_pole where pole_id in
+        <foreach item="poleId" collection="array" open="(" separator="," close=")">
+            #{poleId}
+        </foreach>
+    </delete>
+
+    <select id="selectIotPoleByPoleCode" parameterType="String" resultMap="IotPoleResult">
+      <include refid="selectIotPoleVo"/>
+      where pole_code = #{poleCode} and del_flag = '0' limit 1
+    </select>
+
+    <update id="updateIotPoleLedStatus" parameterType="IotPole">
+      update iot_pole
+      <trim prefix="SET" suffixOverrides=",">
+        <if test="ledStatus != null">led_status = #{ledStatus},</if>
+        <if test="status != null">status = #{status},</if>
+        update_time = sysdate(),
+      </trim>
+      where pole_id = #{poleId}
+    </update>
+</mapper>

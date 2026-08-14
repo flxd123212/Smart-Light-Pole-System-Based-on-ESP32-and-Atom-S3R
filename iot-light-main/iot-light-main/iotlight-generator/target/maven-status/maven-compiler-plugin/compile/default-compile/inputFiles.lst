@@ -1,0 +1,13 @@
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\config\GenConfig.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\controller\GenController.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\domain\GenTable.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\domain\GenTableColumn.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\mapper\GenTableColumnMapper.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\mapper\GenTableMapper.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\service\GenTableColumnServiceImpl.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\service\GenTableServiceImpl.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\service\IGenTableColumnService.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\service\IGenTableService.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\util\GenUtils.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\util\VelocityInitializer.java
+C:\Users\flxd\Desktop\工作文件\25物联网大赛项目\iot-light-main\iot-light-main\iotlight-generator\src\main\java\com\iotlight\generator\util\VelocityUtils.java

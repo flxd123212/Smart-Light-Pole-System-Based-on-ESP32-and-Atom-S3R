@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.mapper.IotCameraCaptureMapper">
+    
+    <resultMap type="IotCameraCapture" id="IotCameraCaptureResult">
+        <result property="captureId"    column="capture_id"    />
+        <result property="poleId"    column="pole_id"    />
+        <result property="imageUrl"    column="image_url"    />
+        <result property="personCount"    column="person_count"    />
+        <result property="resultJson"    column="result_json"    />
+        <result property="captureTime"    column="capture_time"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectIotCameraCaptureVo">
+        select capture_id, pole_id, image_url, person_count, result_json, capture_time, del_flag, create_by, create_time from iot_camera_capture
+    </sql>
+
+    <select id="selectIotCameraCaptureList" parameterType="IotCameraCapture" resultMap="IotCameraCaptureResult">
+        <include refid="selectIotCameraCaptureVo"/>
+        <where>  
+            <if test="poleId != null "> and pole_id = #{poleId}</if>
+            <if test="imageUrl != null  and imageUrl != ''"> and image_url = #{imageUrl}</if>
+            <if test="personCount != null "> and person_count = #{personCount}</if>
+            <if test="resultJson != null  and resultJson != ''"> and result_json = #{resultJson}</if>
+            <if test="captureTime != null "> and capture_time = #{captureTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectIotCameraCaptureByCaptureId" parameterType="Long" resultMap="IotCameraCaptureResult">
+        <include refid="selectIotCameraCaptureVo"/>
+        where capture_id = #{captureId}
+    </select>
+
+    <insert id="insertIotCameraCapture" parameterType="IotCameraCapture" useGeneratedKeys="true" keyProperty="captureId">
+        insert into iot_camera_capture
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">pole_id,</if>
+            <if test="imageUrl != null">image_url,</if>
+            <if test="personCount != null">person_count,</if>
+            <if test="resultJson != null">result_json,</if>
+            <if test="captureTime != null">capture_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">#{poleId},</if>
+            <if test="imageUrl != null">#{imageUrl},</if>
+            <if test="personCount != null">#{personCount},</if>
+            <if test="resultJson != null">#{resultJson},</if>
+            <if test="captureTime != null">#{captureTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateIotCameraCapture" parameterType="IotCameraCapture">
+        update iot_camera_capture
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="poleId != null">pole_id = #{poleId},</if>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="personCount != null">person_count = #{personCount},</if>
+            <if test="resultJson != null">result_json = #{resultJson},</if>
+            <if test="captureTime != null">capture_time = #{captureTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where capture_id = #{captureId}
+    </update>
+
+    <delete id="deleteIotCameraCaptureByCaptureId" parameterType="Long">
+        delete from iot_camera_capture where capture_id = #{captureId}
+    </delete>
+
+    <delete id="deleteIotCameraCaptureByCaptureIds" parameterType="String">
+        delete from iot_camera_capture where capture_id in 
+        <foreach item="captureId" collection="array" open="(" separator="," close=")">
+            #{captureId}
+        </foreach>
+    </delete>
+</mapper>

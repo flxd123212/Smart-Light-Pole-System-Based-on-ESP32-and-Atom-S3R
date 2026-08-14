@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>智能灯杆 720P</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:sans-serif;background:#f0f2f5}
+.container{max-width:960px;margin:0 auto;padding:20px}
+h1{text-align:center;color:#1a1a2e}
+.stream-box{background:#000;border-radius:12px;overflow:hidden;margin-bottom:16px}
+.stream-box img{width:100%;display:block}
+.controls{display:flex;gap:12px;justify-content:center;margin-bottom:20px}
+.btn{padding:14px 40px;border:none;border-radius:8px;font-size:16px;cursor:pointer;background:#4361ee;color:#fff}
+.btn:disabled{background:#aaa;cursor:not-allowed}
+.status{text-align:center;color:#888;margin-bottom:20px}
+.status.success{color:#2ecc71}
+.status.error{color:#e74c3c}
+.gallery-section{background:white;border-radius:12px;padding:20px;margin-top:20px}
+.gallery-header{display:flex;justify-content:space-between;margin-bottom:12px}
+.gallery-header h2{font-size:18px;margin:0}
+.gallery-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px}
+.gallery-item{flex:0 0 auto;width:160px;border-radius:8px;overflow:hidden;cursor:pointer;position:relative}
+.gallery-item img{width:160px;height:120px;object-fit:cover;display:block}
+.gallery-item .photo-time{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);color:white;font-size:11px;padding:4px 8px;text-align:center}
+.gallery-empty{text-align:center;color:#aaa;padding:30px 0}
+.preview-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:1000}
+.preview-overlay.active{display:flex;align-items:center;justify-content:center}
+.preview-overlay img{max-width:90%;max-height:90%;border-radius:8px}
+.preview-overlay .close-btn{position:absolute;top:20px;right:30px;color:white;font-size:36px;cursor:pointer;background:none;border:none}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📷 智能灯杆 720P</h1>
+<div class="stream-box"><img id="liveStream" src="/api/stream/mjpeg"></div>
+<div class="controls">
+<button class="btn" id="captureBtn" onclick="capture()">📸 拍照</button>
+</div>
+<div class="status" id="status">流已连接</div>
+<div class="gallery-section">
+<div class="gallery-header">
+<h2>🖼️ 抓拍记录</h2>
+<span class="count" id="photoCount">0 张</span>
+</div>
+<div class="gallery-scroll" id="galleryScroll">
+<div class="gallery-empty">暂无照片</div>
+</div>
+</div>
+</div>
+<div class="preview-overlay" id="previewOverlay">
+<button class="close-btn" onclick="closePreview()">&times;</button>
+<img id="previewImg" src="">
+</div>
+<script>
+const streamImg = document.getElementById('liveStream');
+const status = document.getElementById('status');
+const btn = document.getElementById('captureBtn');
+const galleryScroll = document.getElementById('galleryScroll');
+const photoCount = document.getElementById('photoCount');
+const previewImg = document.getElementById('previewImg');
+const previewOverlay = document.getElementById('previewOverlay');
+
+let capturing = false;
+let streamUrl = '/api/stream/mjpeg';
+
+async function initStream() {
+    try {
+        const r = await fetch('/api/camera/stream_url');
+        if (r.ok) { const d = await r.json(); if (d.url) streamUrl = d.url; }
+    } catch(e){}
+    streamImg.src = streamUrl + '?t=' + Date.now();
+}
+
+setInterval(() => {
+    streamImg.src = streamUrl + '?t=' + Date.now();
+}, 10000);
+
+const sse = new EventSource('/api/events');
+let photoResolve = null;
+
+sse.addEventListener('photo', (e) => {
+    if (photoResolve) { photoResolve(e.data); photoResolve = null; }
+    refreshGallery();
+});
+
+async function capture() {
+    if (capturing) return;
+    capturing = true;
+    btn.disabled = true;
+    status.textContent = '⏳ 正在拍照...';
+
+    try {
+        const r = await fetch('/api/trigger/set', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({trigger: true})
+        });
+        const d = await r.json();
+        if (!d.ok) throw new Error('触发失败');
+
+        const filename = await new Promise((resolve, reject) => {
+            photoResolve = resolve;
+            setTimeout(() => {
+                photoResolve = null;
+                reject(new Error('等待超时'));
+            }, 10000);
+        });
+
+        await refreshGallery();
+        streamImg.src = '/api/photo/' + filename + '?t=' + Date.now();
+        setTimeout(() => {
+            streamImg.src = streamUrl + '?t=' + Date.now();
+        }, 1500);
+
+        status.className = 'status success';
+        status.textContent = '✅ 拍照成功!';
+    } catch(e) {
+        status.className = 'status error';
+        status.textContent = '❌ ' + e.message;
+    } finally {
+        capturing = false;
+        btn.disabled = false;
+    }
+}
+
+async function refreshGallery() {
+    try {
+        const r = await fetch('/api/photos');
+        const d = await r.json();
+        const photos = d.photos || [];
+        photoCount.textContent = photos.length + ' 张';
+        if (photos.length === 0) {
+            galleryScroll.innerHTML = '<div class="gallery-empty">暂无照片</div>';
+            return;
+        }
+        galleryScroll.innerHTML = photos.map(f => {
+            const ms = (f.match(/photo_(\d+)\.jpg/) || [])[1];
+            const t = ms ? new Date(parseInt(ms)).toLocaleTimeString('zh-CN', {hour12:false}) : '';
+            return '<div class="gallery-item" onclick="previewPhoto(\'' + f + '\')">' +
+                   '<img src="/api/photo/' + f + '" loading="lazy">' +
+                   '<div class="photo-time">' + t + '</div></div>';
+        }).join('');
+        galleryScroll.scrollLeft = 0;
+    } catch(e) { console.error(e); }
+}
+
+function previewPhoto(f) {
+    previewImg.src = '/api/photo/' + f;
+    previewOverlay.classList.add('active');
+}
+
+function closePreview() {
+    previewOverlay.classList.remove('active');
+    previewImg.src = '';
+}
+
+previewOverlay.addEventListener('click', (e) => {
+    if (e.target === previewOverlay) closePreview();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePreview();
+});
+
+initStream();
+refreshGallery();
+</script>
+</body>
+</html>

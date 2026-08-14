@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.mapper.IotSensorDataMapper">
+
+    <resultMap type="IotSensorData" id="IotSensorDataResult">
+        <result property="dataId"    column="data_id"    />
+        <result property="poleId"    column="pole_id"    />
+        <result property="temperature"    column="temperature"    />
+        <result property="humidity"    column="humidity"    />
+        <result property="illumination"    column="illumination"    />
+        <result property="voltage"    column="voltage"    />
+        <result property="current"    column="current"    />
+        <result property="collectTime"    column="collect_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectIotSensorDataVo">
+        select data_id, pole_id, temperature, humidity, illumination, voltage, current, collect_time, create_by, create_time from iot_sensor_data
+    </sql>
+
+    <select id="selectIotSensorDataList" parameterType="IotSensorData" resultMap="IotSensorDataResult">
+        <include refid="selectIotSensorDataVo"/>
+        <where>
+            <if test="poleId != null "> and pole_id = #{poleId}</if>
+            <if test="temperature != null "> and temperature = #{temperature}</if>
+            <if test="humidity != null "> and humidity = #{humidity}</if>
+            <if test="illumination != null "> and illumination = #{illumination}</if>
+            <if test="voltage != null "> and voltage = #{voltage}</if>
+            <if test="current != null "> and current = #{current}</if>
+            <if test="collectTime != null "> and collect_time = #{collectTime}</if>
+        </where>
+    </select>
+
+    <select id="selectIotSensorDataByDataId" parameterType="Long" resultMap="IotSensorDataResult">
+        <include refid="selectIotSensorDataVo"/>
+        where data_id = #{dataId}
+    </select>
+
+    <insert id="insertIotSensorData" parameterType="IotSensorData" useGeneratedKeys="true" keyProperty="dataId">
+        insert into iot_sensor_data
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">pole_id,</if>
+            <if test="temperature != null">temperature,</if>
+            <if test="humidity != null">humidity,</if>
+            <if test="illumination != null">illumination,</if>
+            <if test="voltage != null">voltage,</if>
+            <if test="current != null">current,</if>
+            <if test="collectTime != null">collect_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">#{poleId},</if>
+            <if test="temperature != null">#{temperature},</if>
+            <if test="humidity != null">#{humidity},</if>
+            <if test="illumination != null">#{illumination},</if>
+            <if test="voltage != null">#{voltage},</if>
+            <if test="current != null">#{current},</if>
+            <if test="collectTime != null">#{collectTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateIotSensorData" parameterType="IotSensorData">
+        update iot_sensor_data
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="poleId != null">pole_id = #{poleId},</if>
+            <if test="temperature != null">temperature = #{temperature},</if>
+            <if test="humidity != null">humidity = #{humidity},</if>
+            <if test="illumination != null">illumination = #{illumination},</if>
+            <if test="voltage != null">voltage = #{voltage},</if>
+            <if test="current != null">current = #{current},</if>
+            <if test="collectTime != null">collect_time = #{collectTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where data_id = #{dataId}
+    </update>
+
+    <delete id="deleteIotSensorDataByDataId" parameterType="Long">
+        delete from iot_sensor_data where data_id = #{dataId}
+    </delete>
+
+    <delete id="deleteIotSensorDataByDataIds" parameterType="String">
+        delete from iot_sensor_data where data_id in
+        <foreach item="dataId" collection="array" open="(" separator="," close=")">
+            #{dataId}
+        </foreach>
+    </delete>
+
+</mapper>

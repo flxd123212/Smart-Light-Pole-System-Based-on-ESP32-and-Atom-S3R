@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.mapper.IotControlLogMapper">
+    
+    <resultMap type="IotControlLog" id="IotControlLogResult">
+        <result property="logId"    column="log_id"    />
+        <result property="poleId"    column="pole_id"    />
+        <result property="deviceId"    column="device_id"    />
+        <result property="controlType"    column="control_type"    />
+        <result property="result"    column="result"    />
+        <result property="errorMessage"    column="error_message"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectIotControlLogVo">
+        select log_id, pole_id, device_id, control_type, result, error_message, create_by, create_time from iot_control_log
+    </sql>
+
+    <select id="selectIotControlLogList" parameterType="IotControlLog" resultMap="IotControlLogResult">
+        <include refid="selectIotControlLogVo"/>
+        <where>  
+            <if test="poleId != null "> and pole_id = #{poleId}</if>
+            <if test="deviceId != null "> and device_id = #{deviceId}</if>
+            <if test="controlType != null  and controlType != ''"> and control_type = #{controlType}</if>
+            <if test="result != null  and result != ''"> and result = #{result}</if>
+            <if test="errorMessage != null  and errorMessage != ''"> and error_message = #{errorMessage}</if>
+        </where>
+    </select>
+    
+    <select id="selectIotControlLogByLogId" parameterType="Long" resultMap="IotControlLogResult">
+        <include refid="selectIotControlLogVo"/>
+        where log_id = #{logId}
+    </select>
+
+    <insert id="insertIotControlLog" parameterType="IotControlLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into iot_control_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">pole_id,</if>
+            <if test="deviceId != null">device_id,</if>
+            <if test="controlType != null and controlType != ''">control_type,</if>
+            <if test="result != null">result,</if>
+            <if test="errorMessage != null">error_message,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">#{poleId},</if>
+            <if test="deviceId != null">#{deviceId},</if>
+            <if test="controlType != null and controlType != ''">#{controlType},</if>
+            <if test="result != null">#{result},</if>
+            <if test="errorMessage != null">#{errorMessage},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateIotControlLog" parameterType="IotControlLog">
+        update iot_control_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="poleId != null">pole_id = #{poleId},</if>
+            <if test="deviceId != null">device_id = #{deviceId},</if>
+            <if test="controlType != null and controlType != ''">control_type = #{controlType},</if>
+            <if test="result != null">result = #{result},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where log_id = #{logId}
+    </update>
+
+    <delete id="deleteIotControlLogByLogId" parameterType="Long">
+        delete from iot_control_log where log_id = #{logId}
+    </delete>
+
+    <delete id="deleteIotControlLogByLogIds" parameterType="String">
+        delete from iot_control_log where log_id in 
+        <foreach item="logId" collection="array" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </delete>
+</mapper>
