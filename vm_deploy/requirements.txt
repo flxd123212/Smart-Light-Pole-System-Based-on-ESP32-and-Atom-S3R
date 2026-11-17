@@ -1,0 +1,12 @@
+# Flask AI 图像服务 + YOLO 依赖
+# 兼容 Python 3.8 (Ubuntu 20.04)
+# torch/torchvision 用 CPU 版单独安装 (见 deploy.sh, 避免下载数 GB 的 CUDA 依赖)
+flask==3.0.3
+flask-cors
+requests
+paho-mqtt>=1.6
+
+# YOLO11 推理 (yolo11-flask.py)
+ultralytics==8.3.6
+opencv-python-headless==4.10.0.84
+numpy==1.24.4

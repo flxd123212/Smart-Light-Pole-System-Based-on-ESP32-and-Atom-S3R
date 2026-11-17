@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.iot.mapper.IotAlarmRuleMapper">
+
+    <resultMap type="IotAlarmRule" id="IotAlarmRuleResult">
+        <result property="ruleId"    column="rule_id"    />
+        <result property="poleId"    column="pole_id"    />
+        <result property="paramType"    column="param_type"    />
+        <result property="minValue"    column="min_value"    />
+        <result property="maxValue"    column="max_value"    />
+        <result property="enabled"    column="enabled"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectIotAlarmRuleVo">
+        select rule_id, pole_id, param_type, min_value, max_value, enabled, create_by, create_time, update_by, update_time from iot_alarm_rule
+    </sql>
+
+    <select id="selectIotAlarmRuleList" parameterType="IotAlarmRule" resultMap="IotAlarmRuleResult">
+        <include refid="selectIotAlarmRuleVo"/>
+        <where>
+            <if test="poleId != null "> and pole_id = #{poleId}</if>
+            <if test="paramType != null  and paramType != ''"> and param_type = #{paramType}</if>
+            <if test="minValue != null "> and min_value = #{minValue}</if>
+            <if test="maxValue != null "> and max_value = #{maxValue}</if>
+            <if test="enabled != null  and enabled != ''"> and enabled = #{enabled}</if>
+        </where>
+    </select>
+
+    <select id="selectIotAlarmRuleByRuleId" parameterType="Long" resultMap="IotAlarmRuleResult">
+        <include refid="selectIotAlarmRuleVo"/>
+        where rule_id = #{ruleId}
+    </select>
+
+    <insert id="insertIotAlarmRule" parameterType="IotAlarmRule" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into iot_alarm_rule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">pole_id,</if>
+            <if test="paramType != null and paramType != ''">param_type,</if>
+            <if test="minValue != null">min_value,</if>
+            <if test="maxValue != null">max_value,</if>
+            <if test="enabled != null">enabled,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="poleId != null">#{poleId},</if>
+            <if test="paramType != null and paramType != ''">#{paramType},</if>
+            <if test="minValue != null">#{minValue},</if>
+            <if test="maxValue != null">#{maxValue},</if>
+            <if test="enabled != null">#{enabled},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateIotAlarmRule" parameterType="IotAlarmRule">
+        update iot_alarm_rule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="poleId != null">pole_id = #{poleId},</if>
+            <if test="paramType != null and paramType != ''">param_type = #{paramType},</if>
+            <if test="minValue != null">min_value = #{minValue},</if>
+            <if test="maxValue != null">max_value = #{maxValue},</if>
+            <if test="enabled != null">enabled = #{enabled},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where rule_id = #{ruleId}
+    </update>
+
+    <delete id="deleteIotAlarmRuleByRuleId" parameterType="Long">
+        delete from iot_alarm_rule where rule_id = #{ruleId}
+    </delete>
+
+    <delete id="deleteIotAlarmRuleByRuleIds" parameterType="String">
+        delete from iot_alarm_rule where rule_id in
+        <foreach item="ruleId" collection="array" open="(" separator="," close=")">
+            #{ruleId}
+        </foreach>
+    </delete>
+
+    <select id="selectEnabledRulesByPoleId" parameterType="Long" resultMap="IotAlarmRuleResult">
+      <include refid="selectIotAlarmRuleVo"/>
+      where enabled = '1'
+      and (pole_id = #{poleId} or pole_id is null)
+    </select>
+</mapper>
